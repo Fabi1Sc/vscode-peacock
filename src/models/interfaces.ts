@@ -68,6 +68,8 @@ export interface IPeacockSettings {
   surpriseMeOnStartup: boolean;
   color: string;
   remoteColor: string;
+  externalConfigPath: string;
+  useUserSettings: boolean;
 }
 
 export interface IElementColors {

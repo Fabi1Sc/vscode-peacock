@@ -19,6 +19,7 @@ import {
   ForegroundColors,
   defaultAmountToDarkenLighten,
   ColorSource,
+  State,
 } from '../models';
 import {
   getAdjustedColorHex,
@@ -141,8 +142,75 @@ export function getDarkForegroundColor() {
 }
 
 export function getEnvironmentAwareColor() {
+  if (State.externalConfigColor) {
+    return State.externalConfigColor;
+  }
   const color = vscode.env.remoteName ? getPeacockRemoteColor() : getPeacockColor();
   return color;
+}
+
+export async function updateExternalConfigColor() {
+  let externalConfigPath = readConfiguration<string>(StandardSettings.ExternalConfigPath);
+  if (!externalConfigPath) {
+    State.externalConfigColor = undefined;
+    return;
+  }
+
+  // Expand ~ to home directory
+  if (externalConfigPath.startsWith('~')) {
+    const home = process.env.HOME || process.env.USERPROFILE;
+    if (home) {
+      externalConfigPath = externalConfigPath.replace('~', home);
+    }
+  }
+
+  try {
+    const uri = vscode.Uri.file(externalConfigPath);
+    const content = await vscode.workspace.fs.readFile(uri);
+    const json = JSON.parse(content.toString());
+
+    let result: any;
+    if (typeof json === 'object') {
+      if (json.color) {
+        result = json.color;
+      } else if (json.projects && vscode.workspace.workspaceFolders) {
+        const folderPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+        const home = process.env.HOME || process.env.USERPROFILE;
+
+        // Try exact path match
+        result = json.projects[folderPath];
+
+        // If not found and in home dir, try with ~
+        if (!result && home && folderPath.startsWith(home)) {
+          const portablePath = folderPath.replace(home, '~');
+          result = json.projects[portablePath];
+        }
+
+        // Fallback to workspace name for backwards compatibility
+        if (!result && vscode.workspace.name) {
+          result = json.projects[vscode.workspace.name];
+        }
+      }
+    } else if (typeof json === 'string') {
+      result = json;
+    }
+
+    if (typeof result === 'object' && result['workbench.colorCustomizations']) {
+      // If the result is a full config object, we store it in a special way
+      // or we just extract the peacock color if it exists
+      if (result['peacock.color']) {
+        State.externalConfigColor = result['peacock.color'];
+      }
+      // We can also store the full customizations if we want to bypass Peacock's generation
+      // But for now, let's just extract the color as Peacock expects a color string.
+    } else if (typeof result === 'string') {
+      State.externalConfigColor = result;
+    } else {
+      State.externalConfigColor = undefined;
+    }
+  } catch (e) {
+    State.externalConfigColor = undefined;
+  }
 }
 
 export function inspectColor() {
@@ -230,6 +298,10 @@ export function getRandomFavoriteColor() {
 
 export function getSurpriseMeOnStartup() {
   return readConfiguration<boolean>(StandardSettings.SurpriseMeOnStartup, false);
+}
+
+export function getUseUserSettings() {
+  return readConfiguration<boolean>(StandardSettings.UseUserSettings, false);
 }
 
 export function getAffectedElements() {

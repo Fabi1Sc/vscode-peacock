@@ -28,9 +28,14 @@ import {
   updatePeacockRemoteColor,
   getKeepBadgeColor,
   updateKeepBadgeColor,
+  readConfiguration,
+  updateExternalConfigPath,
+  getUseUserSettings,
+  updateUseUserSettings,
 } from '../../../configuration';
 
 import { noopElementAdjustments, executeCommand, allAffectedElements } from './constants';
+import { StandardSettings } from '../../../models';
 
 export async function setupTest() {
   await executeCommand(Commands.resetWorkspaceColors);
@@ -54,6 +59,10 @@ export async function setupTestSuite(
   originalValues.showColorInStatusBar = getShowColorInStatusBar();
   originalValues.color = getPeacockColor();
   originalValues.remoteColor = getPeacockRemoteColor();
+  originalValues.externalConfigPath = readConfiguration<string>(
+    StandardSettings.ExternalConfigPath,
+  );
+  originalValues.useUserSettings = getUseUserSettings();
 
   // Set the test values
   await updateAffectedElements(allAffectedElements);
@@ -68,6 +77,8 @@ export async function setupTestSuite(
   await updateShowColorInStatusBar(true);
   await updatePeacockColor(undefined);
   await updatePeacockRemoteColor(undefined);
+  await updateExternalConfigPath(undefined);
+  await updateUseUserSettings(false);
   return extension;
 }
 
@@ -88,4 +99,6 @@ export async function teardownTestSuite(originalValues: IPeacockSettings) {
   await updateShowColorInStatusBar(originalValues.showColorInStatusBar);
   await updatePeacockColor(originalValues.color);
   await updatePeacockRemoteColor(originalValues.remoteColor);
+  await updateExternalConfigPath(originalValues.externalConfigPath);
+  await updateUseUserSettings(originalValues.useUserSettings);
 }

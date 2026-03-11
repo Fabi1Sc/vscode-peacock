@@ -31,6 +31,8 @@ import {
   inspectColor,
   getCurrentColorBeforeAdjustments,
   getFavoriteColors,
+  updateExternalConfigColor,
+  readConfiguration,
 } from './configuration';
 import { applyColor, updateColorSetting } from './apply-color';
 import { Logger } from './logging';
@@ -48,27 +50,60 @@ export async function activate(context: vscode.ExtensionContext) {
   registerCommands();
   await initializeTheStarterSetOfFavorites();
 
-  if (workspace.workspaceFolders) {
-    Logger.info('Peacock is in a workspace, so Peacock functionality is available.');
+  // Initial read of external config
+  await updateExternalConfigColor();
+
+  if (workspace.workspaceFolders || State.externalConfigColor) {
+    Logger.info('Peacock functionality is available.');
     /**
      * We only run this logic if we are in a workspace
-     * because they may write peacock settings, and it will fail.
-     * This entire function will re-run when a workspace is opened.
+     * or have an external config
      */
     await checkSurpriseMeOnStartupLogic();
     await addLiveShareIntegration(State.extensionContext);
     await addRemoteIntegration(State.extensionContext);
   } else {
-    Logger.info('Peacock is not in a workspace, so Peacock functionality is not available.');
+    Logger.info('Peacock is not in a workspace and no external config found.');
   }
 
   addSubscriptions(); // add these AFTER applying initial config
+  setupExternalConfigWatcher();
+}
+
+function setupExternalConfigWatcher() {
+  let externalConfigPath = readConfiguration<string>(StandardSettings.ExternalConfigPath);
+  if (externalConfigPath) {
+    // Expand ~ to home directory
+    if (externalConfigPath.startsWith('~')) {
+      const home = process.env.HOME || process.env.USERPROFILE;
+      if (home) {
+        externalConfigPath = externalConfigPath.replace('~', home);
+      }
+    }
+    const watcher = workspace.createFileSystemWatcher(externalConfigPath);
+    watcher.onDidChange(async () => {
+      await updateExternalConfigColor();
+      const color = getEnvironmentAwareColor();
+      if (color) {
+        await applyColor(color);
+      }
+    });
+    State.extensionContext.subscriptions.push(watcher);
+  }
 }
 
 function addSubscriptions() {
   State.extensionContext.subscriptions.push(Logger.getChannel());
 
-  State.extensionContext.subscriptions.push(workspace.onDidChangeConfiguration(applyPeacock()));
+  State.extensionContext.subscriptions.push(
+    workspace.onDidChangeConfiguration(async e => {
+      if (e.affectsConfiguration(`${extensionShortName}.${StandardSettings.ExternalConfigPath}`)) {
+        await updateExternalConfigColor();
+        setupExternalConfigWatcher();
+      }
+      await applyPeacock()(e);
+    }),
+  );
 }
 
 function applyPeacock(): (e: vscode.ConfigurationChangeEvent) => any {
@@ -87,10 +122,13 @@ function applyPeacock(): (e: vscode.ConfigurationChangeEvent) => any {
       );
       await applyColor(color);
 
-      // Only update the color in the workspace settings
-      // if there was already a workspace setting
+      // Only update the color in the settings
+      // if there was already a setting
       const colorSource = inspectColor();
-      if (colorSource.colorSource === ColorSource.WorkspaceValue) {
+      if (
+        colorSource.colorSource === ColorSource.WorkspaceValue &&
+        !readConfiguration<boolean>(StandardSettings.UseUserSettings)
+      ) {
         await updateColorSetting(color);
       }
     }

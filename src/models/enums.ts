@@ -14,6 +14,8 @@ export enum StandardSettings {
   SquigglyBeGone = 'squigglyBeGone',
   SurpriseMeFromFavoritesOnly = 'surpriseMeFromFavoritesOnly',
   SurpriseMeOnStartup = 'surpriseMeOnStartup',
+  ExternalConfigPath = 'externalConfigPath',
+  UseUserSettings = 'useUserSettings',
 }
 
 export enum AffectedSettings {

@@ -376,6 +376,16 @@
           "type": "string",
           "default": "",
           "description": "Peacock color for Live Share Color when acting as a Host "
+        },
+        "peacock.externalConfigPath": {
+          "type": "string",
+          "default": "",
+          "description": "Specifies the path to an external JSON file containing Peacock configuration (e.g. $HOME/peacock.json). If this is set, Peacock will use the color from this file."
+        },
+        "peacock.useUserSettings": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, Peacock will apply colors to the User settings instead of the Workspace settings. Use this to avoid modifying .vscode/settings.json in your projects."
         }
       }
     }

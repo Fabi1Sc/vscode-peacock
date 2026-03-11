@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { ColorSettings, extensionShortName, ISettingsIndexer } from './models';
+import { ColorSettings, extensionShortName, ISettingsIndexer, State } from './models';
 import {
   getColorCustomizationConfigFromWorkspace,
   prepareColors,
@@ -18,7 +18,7 @@ import {
 // import { ConfigurationTarget } from 'vscode';
 
 export async function unapplyColors() {
-  if (!vscode.workspace.workspaceFolders) {
+  if (!vscode.workspace.workspaceFolders && !State.externalConfigColor) {
     // If we are not in a workspace, don't allow Peacock to apply colors or write to settings.
     return;
   }
@@ -66,7 +66,7 @@ export async function applyColor(input: string) {
    *
    */
 
-  if (!vscode.workspace.workspaceFolders) {
+  if (!vscode.workspace.workspaceFolders && !State.externalConfigColor) {
     // If we are not in a workspace, don't allow Peacock to apply colors or write to settings.
     return;
   }
@@ -95,7 +95,7 @@ export async function applyColor(input: string) {
 }
 
 export async function updateColorSetting(color: string) {
-  if (!vscode.workspace.workspaceFolders) {
+  if (!vscode.workspace.workspaceFolders && !State.externalConfigColor) {
     // If we are not in a workspace, don't allow Peacock to apply colors or write to settings.
     return;
   }
