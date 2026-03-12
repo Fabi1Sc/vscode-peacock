@@ -73,10 +73,10 @@ export async function activate(context: vscode.ExtensionContext) {
 function setupExternalConfigWatcher() {
   let externalConfigPath = readConfiguration<string>(StandardSettings.ExternalConfigPath);
   if (externalConfigPath) {
-  const home = process.env.HOME || process.env.USERPROFILE;
-   if (home) {
+    const home = process.env.HOME || process.env.USERPROFILE;
+    if (home) {
       externalConfigPath = externalConfigPath
-      .replace('~', home)
+        .replace('~', home)
         .replace('${userHome}', home)
         .replace('$HOME', home)
         .replace('${HOME}', home);

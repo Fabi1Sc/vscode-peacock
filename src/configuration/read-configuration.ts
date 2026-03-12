@@ -157,14 +157,14 @@ export async function updateExternalConfigColor() {
     return;
   }
 
-  const home =  process.env.HOME || process.env.USERPROFILE;
-    if (home) {
-      externalConfigPath = externalConfigPath
+  const home = process.env.HOME || process.env.USERPROFILE;
+  if (home) {
+    externalConfigPath = externalConfigPath
       .replace('~', home)
-        .replace('${userHome}', home)
-        .replace('$HOME', home)
-        .replace('${HOME}', home);
-    }
+      .replace('${userHome}', home)
+      .replace('$HOME', home)
+      .replace('${HOME}', home);
+  }
 
   try {
     const uri = vscode.Uri.file(externalConfigPath);
