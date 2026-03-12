@@ -73,12 +73,13 @@ export async function activate(context: vscode.ExtensionContext) {
 function setupExternalConfigWatcher() {
   let externalConfigPath = readConfiguration<string>(StandardSettings.ExternalConfigPath);
   if (externalConfigPath) {
-    // Expand ~ to home directory
-    if (externalConfigPath.startsWith('~')) {
-      const home = process.env.HOME || process.env.USERPROFILE;
-      if (home) {
-        externalConfigPath = externalConfigPath.replace('~', home);
-      }
+  const home = process.env.HOME || process.env.USERPROFILE;
+   if (home) {
+      externalConfigPath = externalConfigPath
+      .replace('~', home)
+        .replace('${userHome}', home)
+        .replace('$HOME', home)
+        .replace('${HOME}', home);
     }
     const watcher = workspace.createFileSystemWatcher(externalConfigPath);
     watcher.onDidChange(async () => {

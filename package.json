@@ -380,7 +380,7 @@
         "peacock.externalConfigPath": {
           "type": "string",
           "default": "",
-          "description": "Specifies the path to an external JSON file containing Peacock configuration (e.g. $HOME/peacock.json). If this is set, Peacock will use the color from this file."
+          "description": "Specifies the path to an external JSON file containing Peacock configuration (e.g. ${userHome}/peacock.json). If this is set, Peacock will use the color from this file. Use the ${userHome} variable for you home directory."
         },
         "peacock.useUserSettings": {
           "type": "boolean",

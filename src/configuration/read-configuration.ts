@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+
 import {
   ColorSettings,
   Sections,
@@ -156,13 +157,14 @@ export async function updateExternalConfigColor() {
     return;
   }
 
-  // Expand ~ to home directory
-  if (externalConfigPath.startsWith('~')) {
-    const home = process.env.HOME || process.env.USERPROFILE;
+  const home =  process.env.HOME || process.env.USERPROFILE;
     if (home) {
-      externalConfigPath = externalConfigPath.replace('~', home);
+      externalConfigPath = externalConfigPath
+      .replace('~', home)
+        .replace('${userHome}', home)
+        .replace('$HOME', home)
+        .replace('${HOME}', home);
     }
-  }
 
   try {
     const uri = vscode.Uri.file(externalConfigPath);
@@ -175,15 +177,18 @@ export async function updateExternalConfigColor() {
         result = json.color;
       } else if (json.projects && vscode.workspace.workspaceFolders) {
         const folderPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-        const home = process.env.HOME || process.env.USERPROFILE;
+        const normalizedFolderPath = folderPath.replace(/[\\/]$/, '');
 
         // Try exact path match
-        result = json.projects[folderPath];
+        result = json.projects[normalizedFolderPath];
 
         // If not found and in home dir, try with ~
-        if (!result && home && folderPath.startsWith(home)) {
-          const portablePath = folderPath.replace(home, '~');
-          result = json.projects[portablePath];
+        if (!result && home) {
+          const normalizedHome = home.replace(/[\\/]$/, '');
+          if (normalizedFolderPath.startsWith(normalizedHome)) {
+            const portablePath = normalizedFolderPath.replace(normalizedHome, '~');
+            result = json.projects[portablePath];
+          }
         }
 
         // Fallback to workspace name for backwards compatibility
